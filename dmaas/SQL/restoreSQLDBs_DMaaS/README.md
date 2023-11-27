@@ -16,7 +16,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'restoreSQLDBs_DMaaS_v1'
+$scriptName = 'restoreSQLDBs_DMaaS'
 $repoURLbrian = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 $repoURLmauro = 'https://raw.githubusercontent.com/mauceano/scripts/master/'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoURLmauro/dmaas/SQL/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
@@ -34,7 +34,7 @@ Place both files in a folder together and run the main script like so:
 To restore all databases (except system databases) to the original location:
 
 ```powershell
-./restoreSQLDBs_DMaaS_v1.ps1 -region mydmaasregion `
+./restoreSQLDBs_DMaaS.ps1 -region mydmaasregion `
                    -username myusername `
                    -sourceServer sqlserver1.mydomain.net `
                    -allDBs `
@@ -45,7 +45,7 @@ To restore all databases (except system databases) to the original location:
 To restore all databases (except system databases) to an alternate server:
 
 ```powershell
-./restoreSQLDBs_DMaaS_v1.ps1 -region mydmaasregion `
+./restoreSQLDBs_DMaaS.ps1 -region mydmaasregion `
                    -username myusername `
                    -sourceServer sqlserver1.mydomain.net `
                    -allDBs `

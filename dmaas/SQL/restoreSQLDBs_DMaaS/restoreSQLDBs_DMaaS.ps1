@@ -2,8 +2,8 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory)][string]$username = '', 
-    [Parameter(Mandatory)][string]$region = '',
+    [Parameter(Mandatory=$True)][string]$username = '', 
+    [Parameter(Mandatory=$True)][string]$region = '',
     [Parameter(Mandatory=$True)][string]$sourceServer,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][array]$sourceDB,
@@ -29,8 +29,8 @@ param (
     [Parameter()][switch]$captureTailLogs,
     [Parameter()][switch]$wait,
     [Parameter()][switch]$progress,
-    [Parameter()][int64]$pageSize = 5,
-    [Parameter()][int64]$dbsPerRecovery = 5,
+    [Parameter()][int64]$pageSize = 20,
+    [Parameter()][int64]$dbsPerRecovery = 20,
     [Parameter()][int64]$sleepTime = 30,
     [Parameter()][switch]$exportPaths,
     [Parameter()][switch]$importPaths,
@@ -39,7 +39,6 @@ param (
     [Parameter()][switch]$dbg
 )
 
-# Prechecks start
 if($sleepTime -lt 30){
     $sleepTime = 30
 }
@@ -48,7 +47,6 @@ if(! $commit -and ! $exportPaths -and ! $showPaths){
     Write-Host "Running in test mode. Please use the -commit switch to perform the recoveries" -ForegroundColor Yellow
 }
 
-# Check for Source DB input conflicts
 $conflictingSelections = $False
 if($allDBs){
     if($sourceDBList -ne '' -or $sourceDB.Count -gt 0){
@@ -102,9 +100,16 @@ if(! $region){
     Write-Host "-region is required when connecting to CCS" -ForegroundColor Yellow
     exit 1
 }
+
 # authenticate
 apiauth -username $username -region $region
 Write-Host "Connecting to CCS $region as $username"
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
 # end authentication =========================================
 
 # import file paths
@@ -122,106 +127,114 @@ if($newerThan){
     $newerThanUsecs = timeAgo $newerThan days
 }
 
-#Initialise and Populate the DB List
-Write-host "Finding registered sources filtered by SQL servers only"
-$searchAll = api get "protectionSources/applicationServers?application=kSQL&environment=kSQL"
-$DBInfo = @()
-$DBObject = @()
-$DBObjectFound = @()
-$dbFiles = @()
-$appServer = @()
-$instance = @()
-foreach ($appServer in $searchAll.applicationServer) {
-    foreach ($node in $appServer.applicationNodes.nodes) {
-        $serverName = $appServer.protectionSource.name
-        $serverId = $appServer.protectionSource.id
-		$dbId = $node.protectionSource.id
-        $parentId = $node.protectionSource.parentId
-        $dbLongName = $node.protectionSource.name
-        $dbShortName = $node.protectionSource.sqlProtectionSource.databaseName
-        $instanceName = $node.protectionSource.sqlProtectionSource.name
-        #$dbRole = $node.protectionSource.sqlProtectionSource.dbFileGroups[0]
-		$dbFiles = $node.protectionSource.sqlProtectionSource.dbFiles
-        $DBInfo = @($DBInfo + @{
-            'serverName' = $serverName
-			'serverId' = $serverId
-            'dbId' = $dbId
-            'dbLongName' = $dbLongName
-            'dbShortName' = $dbShortName
-            'instanceName' = $instanceName
-			'dbFiles' = $dbFiles
-            })
-    }
-	$DBObject = @($DBObject + @{
-		'DBInfo' = $DBInfo
-	})
-}
-#$DBInfo
-#$DBObject.DBInfo.dbId # = $dbAllInfo | ConvertTo-JSON -Depth 99
-
-# find all databases on server
+# find all protected databases on server
 if($allDBs -or $exportPaths){
-    $from = 0
-	$allSearch = @()
-	$thisallSearch = @()
-	$appServerId = @()
-	$appServerId = $DBObject.DBInfo.serverId | Sort-Object -Unique
-    while($appServerId.Count -gt $from){
-		$ID=$appServerId[$from]
-		$from += 1
-		$thisallSearch = (api get -v2 "data-protect/search/objects?sourceIds=$ID&isProtected=true&environments=kSQL")
-		$allSearch = @($allSearch + $thisallSearch)
-	}
-	$allSearch
-	#if ($allSearch.objects.name -eq $DBObject.DBInfo.dbLongName -and $allSearch.sourceInfo.name -eq $DBObject.DBInfo.serverName){$DBObjectFound.DBInfo = $DBObject.DBInfo}
-	if ($allSearch){
-		$allSearch = $allSearch | Where-Object {$_.name -eq $DBObject.DBInfo.dbLongName -and $_.sourceInfo.name -eq $DBObject.DBInfo.serverName}
-		#if ($allSearch.objects){$server = $DBObject.DBInfo.serverName}
-	}
-	$allSearch
+	# The search, structure, and commands below are an artificial simulation of the on-prem searchvms command.
+	# Retrieve all registered SQL Application Servers
+	$appServer = (api get "protectionSources/applicationServers?application=kSQL&environment=kSQL").applicationServer
+	# Filter based on Databases with protection and SQL Server provided at input:
+	$appServer = $appServer | Where-Object {$_.applicationNodes.nodes.protectedSourcesSummary.leavesCount -eq "1" -and $_.protectionSource.name -eq $sourceServer}
+	# Store the Physical protection source object
+	$prtSrc = @($appServer | Where-Object {$_.applicationNodes.nodes.protectedSourcesSummary.leavesCount -eq "1" -and $_.protectionSource.name -eq $sourceServer}).protectionSource
+	# Store the SQL protection source object
+	$nodes = $appServer.applicationNodes.nodes | Where-Object {$_.protectedSourcesSummary.leavesCount -eq "1"}
+	#####
+	$appServer | ConvertTo-JSON -Depth 99 | Out-File -FilePath .\appServer1.json
 	
-# exportFileInfo
-	if($exportPaths){
-		$fileInfoVec = @()
-		foreach($obj in $exportPaths){
-			if($obj.dbFiles){
-				$dbName = $obj.instanceName
-				$fileInfo = $obj.dbFiles
-				$fileInfoVec = @($fileInfoVec + @{
-					'name' = $dbName
-					'fileInfo' = $fileInfo
+	# Create a structure for the given sourceServer and protected databases, similar to the output of searchvms:
+	foreach ($serv in $nodes) 
+	{
+		$vmDocument = @($vmDocument + @{
+			'objectAliases' = $prtSrc.name
+			'serverAAG' = $serv.protectionSource.sqlProtectionSource.dbAagName
+			'objectName' = $serv.protectionSource.name
+			'objectId' = @(
+				@{
+					'jobUid' = @(
+						@{
+							'clusterId'            = $prtSrc.physicalProtectionSource.id.clusterId
+							'clusterIncarnationId' = $prtSrc.physicalProtectionSource.id.clusterIncarnationId
+							'id'                   = -1
+						})
+					'entity' = @(
+						@{
+							'id' = $serv.protectionSource.id
+							'parentId' = $prtSrc.id
+							'displayName' = $serv.protectionSource.name
+							'sqlEntity' = @(
+								@{
+									'instanceName' = $serv.protectionSource.sqlProtectionSource.name
+									'databaseName' = $serv.protectionSource.sqlProtectionSource.databaseName
+									'dbFileInfoVec' = $serv.protectionSource.sqlProtectionSource.dbFiles | ForEach-Object {
+										$dbfdata = $_
+										[PSCustomObject] @{
+											'fullPath' = $dbfdata.fullPath
+											'sizeBytes' = $dbfdata.sizeBytes
+											'type' = if ($dbfdata.fileType -eq 'kRows') {"0"} else {"1"}
+											'logicalName' = $dbfdata.fullPath.split('\\')[-1].split('.')[0]
+										}
+									}
+								})
+						})
 				})
-			}
-		}
-		$fileInfoVec | ConvertTo-JSON -Depth 99 | Out-File -FilePath $exportFilePath
-		"Exported file paths to $exportFilePath"
-		exit 0
+			})
+		$vms = @($vms + @{
+			'vmDocument' = $vmDocument
+		})
 	}
-	
-	if(! $appServer ){
-		Write-Host "no protected DBs found for $sourceServer" -ForegroundColor Yellow
-		exit
-	}
+
+	# Store the results in similar format to searchvms in dbresults
+	$dbresults = @($dbresults + @{
+			'vms' = $vms
+	})
+
+	# $dbresults | ConvertTo-JSON -Depth 99 | Out-File -FilePath .\vmsearch.json
+
+    if(! $dbresults.vms){
+        Write-Host "no DBs found for $sourceServer" -ForegroundColor Yellow
+        exit
+    }
+
+    # exportFileInfo
+    if($exportPaths){
+        $fileInfoVec = @()
+        foreach($vm in $dbresults.vms){
+            if($vm.vmDocument.objectId.entity.sqlEntity.PSObject.Properties['dbFileInfoVec']){
+                $dbName = $vm.vmDocument.objectName
+                $fileInfo = $vm.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec
+                $fileInfoVec = @($fileInfoVec + @{
+                    'name' = $dbName
+                    'fileInfo' = $fileInfo
+                })
+            }
+        }
+        $fileInfoVec | ConvertTo-JSON -Depth 99 | Out-File -FilePath $exportFilePath
+        "Exported file paths to $exportFilePath"
+        exit 0
+    }
 
     # filter by source instance
     if($sourceInstance){
-        $instance = $instance | Where-Object {($_.name -split '/')[0] -eq $sourceInstance}
-        if(! $instance ){
+        $dbresults.vms = $dbresults.vms | Where-Object {($_.vmDocument.objectName -split '/')[0] -eq $sourceInstance}
+        if(! $dbresults.vms){
             Write-Host "no DBs found for $sourceServer/$sourceInstance" -ForegroundColor Yellow
             exit
         }
     }
-    # filter by age of most recent backup
-	<#if($newerThan){
-        $dbresults.applicationServer = $dbresults.applicationServer | Where-Object {$_.vmDocument.versions[0].instanceId.jobStartTimeUsecs -ge $newerThanUsecs}
+
+    <# filter by source AAG nodes
+    if($sourceNodes){
+        $dbresults.vms = $dbresults.vms | Where-Object {
+            ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual)
+        }
         if(! $dbresults.vms){
-            Write-Host "no DBs found newer than $newerThan days" -ForegroundColor Yellow
+            Write-Host "no DBs found for source nodes $($sourceNodes -join ', ')" -ForegroundColor Yellow
             exit
         }
     }#>
-	
-	#Populate all Instance/Databases names
-	$sourceDbNames = $instance | Sort-Object -Unique
+
+    $sourceDbNames = @($dbresults.vms.vmDocument.objectName | Sort-Object -Unique)
+
     if(! $includeSystemDBs){
         $sourceDbNames = $sourceDbNames | Where-Object {($_ -split '/')[-1] -notin @('Master', 'Model', 'MSDB')}
     }
@@ -265,22 +278,21 @@ $recoveryParams = @{
 }
 
 foreach($sourceDbName in $sourceDbNames | Sort-Object){
-    if(! $sourceDbName -match '/'){
+    if(! $sourceDbName.Contains('/')){
         if($sourceInstance){
             $sourceDbName = "$sourceInstance/$sourceDbName"
         }else{
             $sourceDbName = "MSSQLSERVER/$sourceDbName"
         }
     }
-    $thisSourceInstance, $shortDbName = $sourceDbName -split '/'    
+    $thisSourceInstance, $shortDbName = $sourceDbName -split '/'
     $search = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$sourceDbName&environments=kSQL"
     $search.objects = $search.objects | Where-Object {$_.name -eq $sourceDbName}
     $search.objects = $search.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $sourceServer -or $_.mssqlParams.aagInfo.name -eq $sourceServer}
     if($newerThan){
         $search.objects = $search.objects | Where-Object {$_.latestSnapshotsInfo.protectionRunStartTimeUsecs -ge $newerThanUsecs}
         if($search.objects.Count -eq 0){
-            ##### Uncomment
-			# Write-Host "Snapshots newer than $newerThan days are not found for $sourceDbName on $sourceServer" -ForegroundColor Yellow
+            Write-Host "Snapshots newer than $newerThan days are not found for $sourceDbName on $sourceServer" -ForegroundColor Yellow
             continue
         }
     }
@@ -299,7 +311,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
                 $latestSnapshotInfo = ($o.latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
                 $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.archivalSnapshotsInfo.archivalTaskId -split ':'
 				$jobId = "-1"
-            
+				
                 # PIT lookup
                 $pitQuery = @{
                     "jobUids" = @(
@@ -315,10 +327,6 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
                     "endTimeUsecs" = $logTimeUsecs
                 }
                 $logs = api post restore/pointsForTimeRange $pitQuery
-				#DEBUG
-				Write-Host "Checking for logs" -Foreground Red
-				$logs
-				#END DEBUG
                 $fullSnapshotInfo = $logs.fullSnapshotInfo | Where-Object {$_.restoreInfo.startTimeUsecs -le $logTimeUsecs}
                 if($fullSnapshotInfo){
                     $search.objects = $o
@@ -329,7 +337,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     }
     Write-Host "`n$($search.objects[0].name)"
     $thisSourceServer = $search.objects[0].mssqlParams.hostInfo.name
-    $latestSnapshotInfo = ($search.objects[0].latestSnapshotsInfo | Sort-Object -Property protectionRunStartTimeUsecs)[-1]
+    $latestSnapshotInfo = $search.objects[0].latestSnapshotsInfo
     $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.archivalSnapshotsInfo.archivalTaskId -split ':'
 	$jobId = "-1"
 	
@@ -413,13 +421,10 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         if($logTimeUsecs -and $logTimeUsecs -gt $selectedPIT){
             Write-Host " Best available PIT is $(usecsToDate $selectedPIT)" -ForegroundColor Yellow
         }elseif($logTimeUsecs -and $logTimeUsecs -lt $selectedPIT){
-            Write-Host " Best lesser available PIT is $(usecsToDate $selectedPIT)" -ForegroundColor Yellow
+            Write-Host " Best available PIT is $(usecsToDate $selectedPIT)" -ForegroundColor Yellow
         }
         Write-Host " Selected PIT $(usecsToDate $selectedPIT)"
     }
-	# $clusterId, $clusterIncarnationId, $jobId = $latestSnapshotInfo.archivalSnapshotsInfo.archivalTaskId -split ':'
-	# $jobId = "-1"
-	#
 	$protectionGroupId = $clusterId, $clusterIncarnationId, $jobId -join ':'
     $search2 = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverApps&searchString=$sourceDbName&protectionGroupIds=$protectionGroupId&filterSnapshotToUsecs=$runStartTimeUsecs&filterSnapshotFromUsecs=$runStartTimeUsecs&environments=kSQL"
     $search2.objects = $search2.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $thisSourceServer}
@@ -448,7 +453,6 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         }
     }
     $targetConfig = $thisParam.sqlTargetParams.originalSourceConfig
-	
     if($captureTailLogs){
         $targetConfig.captureTailLogs = $True        
     }
@@ -511,6 +515,59 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         }
     }
 
+	# Initiate the 2nd search 
+	$appServer2 = (api get "protectionSources/applicationServers?application=kSQL&environment=kSQL").applicationServer
+	$appServer2 = $appServer2 | Where-Object {$_.applicationNodes.nodes.protectedSourcesSummary.leavesCount -eq "1" -and $_.applicationNodes.nodes.protectionSource.id -eq $($search2.objects[0].id)}
+	$prtSrc2 = @($appServer2 | Where-Object {$_.applicationNodes.nodes.protectedSourcesSummary.leavesCount -eq "1" -and $_.applicationNodes.nodes.protectionSource.id -eq $($search2.objects[0].id) -and $_.protectionSource.name -eq $thisSourceServer}).protectionSource
+	$nodes2 = $appServer2.applicationNodes.nodes | Where-Object {$_.protectedSourcesSummary.leavesCount -eq "1" -and $_.protectionSource.id -eq $($search2.objects[0].id)}
+	
+	# Create another structure for the given sourceServer and protected databases, similar to the output of searchvms:
+	foreach ($serv2 in $nodes2) 
+	{
+		$vmDocument2 = @($vmDocument2 + @{
+			'objectAliases' = $prtSrc2.name
+			'serverAAG' = $serv2.protectionSource.sqlProtectionSource.dbAagName
+			'objectName' = $serv2.protectionSource.name
+			'objectId' = @(
+				@{
+					'jobUid' = @(
+						@{
+							'clusterId'            = $prtSrc2.physicalProtectionSource.id.clusterId
+							'clusterIncarnationId' = $prtSrc2.physicalProtectionSource.id.clusterIncarnationId
+							'id'                   = -1
+						})
+					'entity' = @(
+						@{
+							'id' = $serv2.protectionSource.id
+							'parentId' = $prtSrc2.id
+							'displayName' = $serv2.protectionSource.name
+							'sqlEntity' = @(
+								@{
+									'instanceName' = $serv2.protectionSource.sqlProtectionSource.name
+									'databaseName' = $serv2.protectionSource.sqlProtectionSource.databaseName
+									'dbFileInfoVec' = $serv2.protectionSource.sqlProtectionSource.dbFiles | ForEach-Object {
+										$dbfdata2 = $_
+										[PSCustomObject] @{
+											'fullPath' = $dbfdata2.fullPath
+											'sizeBytes' = $dbfdata2.sizeBytes
+											'type' = if ($dbfdata2.fileType -eq 'kRows') {"0"} else {"1"}
+											'logicalName' = $dbfdata2.fullPath.split('\\')[-1].split('.')[0]
+										}
+									}
+								})
+						})
+				})
+			})
+		$vms2 = @($vms2 + @{
+			'vmDocument' = $vmDocument2
+		})
+	}
+
+	# Store the results in similar format to searchvms in dbresults2
+	$dbresults2 = @($dbresults2 + @{
+			'vms' = $vms2
+	})
+
     # file destinations
     if($alternateInstance -eq $True -or $renameDB -eq $True -or $showPaths){
         # use source paths
@@ -519,23 +576,20 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             $useSourcePaths = $True
         }
         if($useSourcePaths -or $showPaths){
-            $FileInfoVec = $null
+            $dbFileInfoVec = $null
             if($importedFileInfo){
                 $importedDBFileInfo = $importedFileInfo | Where-Object {$_.name -eq $sourceDbName}
                 if($importedDBFileInfo){
-                    $FileInfoVec = $importedDBFileInfo.fileInfo ##### CHECK THIS                    
+                    $dbFileInfoVec = $importedDBFileInfo.fileInfo                    
+                }
+            }else{
+                $fileSearch = $dbresults2 | Where-Object {$_.vms.vmDocument.objectId.entity.id -eq $($search2.objects[0].id)}
+				$fileSearch.vms.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec
+                if($fileSearch.vms.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
+                    $dbFileInfoVec = $fileSearch.vms.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec
                 }
             }
-			else{
-				$fileInfo = (api get "protectionSources/applicationServers?application=kSQL&environment=kSQL").applicationServer.applicationNodes | Where-Object { $_.nodes.protectionSource.id -eq "$($search2.objects[0].id)" -and $_.nodes.protectedSourcesSummary.totalLogicalSize -ge "1" }
-				Write-Host "fileInfo after leaves" -ForegroundColor Red
-				$fileInfo.nodes.protectionSource.id
-				#####
-				if($fileInfo.nodes.protectionSource.sqlProtectionSource.PSObject.Properties['dbFiles']){
-                $FileInfoVec = $fileInfo.nodes.protectionSource.sqlProtectionSource.dbFiles
-                }
-            }
-            if(! $FileInfoVec){
+            if(! $dbFileInfoVec){
                 if(! $mdfFolder){
                     Write-Host "    Skipping: File info not found, please use -mdfFolder, -ldfFolder, -ndfFolders (or -importPaths)" -ForegroundColor Yellow
                     $skippedDBs = @($skippedDBs + $sourceDbName)
@@ -543,15 +597,15 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
                 }
             }
             if($showPaths){
-                $FileInfoVec | Format-Table -Property fileType, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
+                $dbFileInfoVec | Format-Table -Property logicalName, @{l='Size (MiB)'; e={$_.sizeBytes / (1024 * 1024)}}, fullPath
                 # exit 0
             }
             $mdfFolderFound = $False
             $ldfFolderFound = $False
             $secondaryFileLocation = @()
-            foreach($datafile in $FileInfoVec){
+            foreach($datafile in $dbFileInfoVec){
                 $path = $datafile.fullPath.subString(0, $datafile.fullPath.LastIndexOf('\'))
-                if($datafile.fileType -eq "kRows"){
+                if($datafile.type -eq 0){
                     if($mdfFolderFound -eq $False){
                         $mdfFolder = $path
                         $mdfFolderFound = $True
@@ -559,7 +613,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
                         $secondaryFileLocation = @($secondaryFileLocation + @{"filenamePattern" = $datafile.fullPath; "directory" = $path})
                     }
                 }
-                if($datafile.fileType -eq "kLog"){
+                if($datafile.type -eq 1){
                     if($ldfFolderFound -eq $False){
                         $ldfFolder = $path
                         $ldfFolderFound = $True
@@ -603,6 +657,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
 
     # perform recovery group
     if($dbsSelected -ge $dbsPerRecovery){
+		if ($alternateInstance) {Write-Host "Recovering to alternate Server"} else {Write-Host "Recovering to same Server"}
         # perform this recovery
         $recovery = api post -v2 data-protect/recoveries $recoveryParams
         if(! $recovery.id){
@@ -714,9 +769,8 @@ if(($wait -or $progress) -and $recoveryIds.Count -gt 0){
 }elseif($recoveryIds.Count -gt 0){
     Write-Host "`nPerforming recoveries...`n"
 }else{
-    Write-Host ""
+    Write-Host "`nNot Performing any recoveries...`n"
 }
-
 if(! $commit){
     Write-Host "Exiting without recovering. Please use the -commit switch to perform the recoveries" -ForegroundColor Yellow
     exit 0

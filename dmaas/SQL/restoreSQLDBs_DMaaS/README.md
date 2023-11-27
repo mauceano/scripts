@@ -2,9 +2,11 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-`Note:` This script is designed for Cohesity Bacckup as a Service only (DMaaS), it is not suitable for Cohesity Clusters.
+`Note:` This script is to be used in Cohesity Backup as a Service only (DMaaS), it is not suitable for Cohesity Clusters.
 
-This script restores one or more (or all) databases from the specified SQL server (not including the system databases).  
+This script restores one or more (or all) databases from the specified SQL server (not including the system databases unless specified).  
+
+## Special thanks to Brian Seltzer as this script is a highly modified version of his On-Prem version, restoreSQLv2
 
 ## Warning
 
@@ -26,7 +28,7 @@ $repoURLmauro = 'https://raw.githubusercontent.com/mauceano/scripts/master/'
 
 ## Components
 
-* restoreSQLDBs_DMaaS_v1.ps1: the main powershell script
+* restoreSQLDBs_DMaaS.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
@@ -34,7 +36,7 @@ Place both files in a folder together and run the main script like so:
 To restore all databases (except system databases) to the original location:
 
 ```powershell
-./restoreSQLDBs_DMaaS.ps1 -region mydmaasregion `
+./restoreSQLDBs_DMaaS.ps1 -region myccsregionid `
                    -username myusername `
                    -sourceServer sqlserver1.mydomain.net `
                    -allDBs `
@@ -45,11 +47,24 @@ To restore all databases (except system databases) to the original location:
 To restore all databases (except system databases) to an alternate server:
 
 ```powershell
-./restoreSQLDBs_DMaaS.ps1 -region mydmaasregion `
+./restoreSQLDBs_DMaaS.ps1 -region myccsregionid `
                    -username myusername `
                    -sourceServer sqlserver1.mydomain.net `
                    -allDBs `
                    -targetServer sqlserver2.mydomain.net `
+                   -commit
+```
+
+To restore a specific database to an alternate server and alternate database, using specific mdf/ldf directories:
+
+```powershell
+./restoreSQLDBs_DMaaS.ps1 -region myccsregionid `
+                   -username myusername `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDB AdventureWorks2022 `
+				   -targetServer sqlserver1.mydomain.net `
+				   -targetDB Alt_AdvWorks2022 `
+				   -mdfFolder E:\MSSQL\DATA -ldfFolder E:\MSSQL\Log
                    -commit
 ```
 
@@ -68,7 +83,7 @@ When running a DMaaS compatible script for the first time, you will be prompted 
 
 ## Authentication Parameters
 
-* -region: (required) name of the AWS or Azure deployed DMaaS region where the Database backups reside ( example AWS: ap-southeast-2, example Azure: centralus)
+* -region: (required) name of the deployed DMaaS region where the Database backups reside (AWS example: ap-southeast-2, Azure example: centralus)
 * -username: (required) name of user to connect to Cohesity Backup as a Service
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
@@ -127,7 +142,7 @@ When running a DMaaS compatible script for the first time, you will be prompted 
 
 ## Removed - Self-Managed Cluster Parameters
 
-These parameters existed in the Cohesity Clusters version of script, which are not applicable to DMaaS
+These parameters were removed from the Cohesity Clusters version of script, which are not applicable to DMaaS
 
 * -vip: Not applicable to DMaaS
 * -domain: Not applicable to DMaaS

@@ -18,7 +18,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 # Download Commands
 $scriptName = 'restoreSQLDBs_DMaaS_v1'
 $repoURLbrian = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
-$repoURLmauro = 'https://raw.githubusercontent.com/mauceano/scripts/main/'
+$repoURLmauro = 'https://raw.githubusercontent.com/mauceano/scripts/master/'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoURLmauro/dmaas/SQL/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoURLbrian/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands

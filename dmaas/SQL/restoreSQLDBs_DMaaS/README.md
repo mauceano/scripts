@@ -4,11 +4,11 @@
 
 This script restores one or more (or all) databases from the specified SQL server (not including the system databases unless specified).  
 
-`Note:` This script is to be used in Cohesity Backup as a Service only (DMaaS), it is not suitable for Cohesity Clusters.
+`Note:` This script is to be used in Cohesity Backup as a Service only (DMaaS), it is not suitable for Self-Managed Cohesity clusters.
 
 ## Tributes & Thanks
 
-This script is a highly modified version of Brian Seltzer's Cohesity Clusters version, restoreSQLv2.
+This script is a highly modified version of Brian Seltzer's "restoreSQLv2.ps1" (Self-Managed clusters version)
 
 ## Warning
 

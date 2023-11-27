@@ -1,10 +1,10 @@
 # Restore Multiple SQL Databases Using PowerShell
 
-Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
-
-`Note:` This script is to be used in Cohesity Backup as a Service only (DMaaS), it is not suitable for Cohesity Clusters.
+`Disclaimer:` this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
 This script restores one or more (or all) databases from the specified SQL server (not including the system databases unless specified).  
+
+`Note:` This script is to be used in Cohesity Backup as a Service only (DMaaS), it is not suitable for Cohesity Clusters.
 
 ## Tributes & Thanks
 

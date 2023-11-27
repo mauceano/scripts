@@ -2,14 +2,9 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    #[Parameter(Mandatory)][string]$username = '', # Username
-    #[Parameter(Mandatory)][string]$region = '',  # DMaaS region
-	[Parameter()][string]$username = 'mauceano@gmail.com', # Username
-    [Parameter()][string]$region = 'ap-southeast-2',  # DMaaS region
+    [Parameter(Mandatory)][string]$username = '', 
+    [Parameter(Mandatory)][string]$region = '',
     [Parameter(Mandatory=$True)][string]$sourceServer,
-    [Parameter()][switch]$useApiKey,
-    [Parameter()][switch]$noPrompt,
-    [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][array]$sourceDB,
     [Parameter()][string]$sourceDBList,

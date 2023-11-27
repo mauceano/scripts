@@ -6,7 +6,9 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script restores one or more (or all) databases from the specified SQL server (not including the system databases unless specified).  
 
-## Special thanks to Brian Seltzer as this script is a highly modified version of his On-Prem version, restoreSQLv2
+## Tributes & Thanks
+
+This script is a highly modified version of Brian Seltzer's Cohesity Clusters version, restoreSQLv2.
 
 ## Warning
 

@@ -17,7 +17,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'restoreSQL_DMaaS_v1'
+$scriptName = 'restoreSQL_DMaaS'
 $repoURLbrian = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 $repoURLmauro = 'https://raw.githubusercontent.com/mauceano/scripts/master/'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoURLmauro/dmaas/SQL/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
@@ -27,7 +27,7 @@ $repoURLmauro = 'https://raw.githubusercontent.com/mauceano/scripts/master/'
 
 ## Components
 
-* restoreSQLDBs_DMaaS_v1.ps1: the main powershell script
+* restoreSQLDBs_DMaaS.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
@@ -36,7 +36,7 @@ Place both files in a folder together and run the main script like so:
 # examples
 
 # restore to the original location
-./restoreSQL_DMaaS_v1.ps1 -region mydmaasregion `
+./restoreSQL_DMaaS.ps1 -region mydmaasregion `
                  -username myusername `
                  -sourceServer mysqlserver `
                  -sourceDB mydb `
@@ -44,7 +44,7 @@ Place both files in a folder together and run the main script like so:
                  -latest
 
 # restore to an alternate location
-./restoreSQL_DMaaS_v1.ps1 -region mydmaasregion `
+./restoreSQL_DMaaS.ps1 -region mydmaasregion `
                  -username myusername `
                  -sourceServer mysqlserver `
                  -sourceDB mydb `

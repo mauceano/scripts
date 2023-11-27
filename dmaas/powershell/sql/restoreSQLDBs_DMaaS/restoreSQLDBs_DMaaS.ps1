@@ -188,8 +188,6 @@ if($allDBs -or $exportPaths){
 			'vms' = $vms
 	})
 
-	# $dbresults | ConvertTo-JSON -Depth 99 | Out-File -FilePath .\vmsearch.json
-
     if(! $dbresults.vms){
         Write-Host "no DBs found for $sourceServer" -ForegroundColor Yellow
         exit
@@ -221,17 +219,6 @@ if($allDBs -or $exportPaths){
             exit
         }
     }
-
-    <# filter by source AAG nodes
-    if($sourceNodes){
-        $dbresults.vms = $dbresults.vms | Where-Object {
-            ([array]$x = Compare-Object -Referenceobject $sourceNodes -DifferenceObject $_.vmDocument.objectAliases  -excludedifferent -IncludeEqual)
-        }
-        if(! $dbresults.vms){
-            Write-Host "no DBs found for source nodes $($sourceNodes -join ', ')" -ForegroundColor Yellow
-            exit
-        }
-    }#>
 
     $sourceDbNames = @($dbresults.vms.vmDocument.objectName | Sort-Object -Unique)
 
@@ -584,7 +571,6 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
                 }
             }else{
                 $fileSearch = $dbresults2 | Where-Object {$_.vms.vmDocument.objectId.entity.id -eq $($search2.objects[0].id)}
-				$fileSearch.vms.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec
                 if($fileSearch.vms.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec){
                     $dbFileInfoVec = $fileSearch.vms.vmDocument.objectId.entity.sqlEntity.dbFileInfoVec
                 }

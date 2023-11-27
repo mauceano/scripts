@@ -100,7 +100,6 @@ DMaaS uses an API key for authentication. To acquire an API key:
 * -noRecovery: Restore the DB with NORECOVER option (default is to recover)
 * -resume: Resume recovery of previously restored database (left in NORECOVERY mode)
 * -update: short hand for -resume -noRecovery -latest
-* -restoreFromArchive: force restore from archive even if local snapshot exists
 
 ## Other Parameters
 
@@ -121,12 +120,13 @@ These parameters existed in the Cohesity Clusters version of script, which are n
 
 * -vip: Not applicable to DMaaS
 * -domain: Not applicable to DMaaS
-* -password: (optional) will use cached password or will be prompted
-* -useApiKey: Rremoved as an option as it is required for DMaaS
+* -password: Not applicable to DMaaS
+* -useApiKey: Removed and defaulted as in DMaaS all connections require API Keys
 * -noPrompt: Not applicable to DMaaS
 * -tenant: Not applicable to DMaaS
 * -mcm: Not applicable to DMaaS
 * -clusterName: Not applicable to DMaaS
+* -restoreFromArchive: Removed and defaulted as in DMaaS all backup copies are considered Archives
 
 ## Overwrite Warning
 

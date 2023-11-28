@@ -61,13 +61,13 @@ To restore a specific database to an alternate server and alternate database, us
 
 ```powershell
 ./restoreSQLDBs_DMaaS.ps1 -region myccsregionid `
-                   -username myusername `
-                   -sourceServer sqlserver1.mydomain.net `
-                   -sourceDB AdventureWorks2022 `
-				   -targetServer sqlserver1.mydomain.net `
-				   -targetDB Alt_AdvWorks2022 `
-				   -mdfFolder E:\MSSQL\DATA -ldfFolder E:\MSSQL\Log
-                   -commit
+			  -username myusername `
+                   	  -sourceServer sqlserver1.mydomain.net `
+			  -sourceDB AdventureWorks2022 `
+			  -targetServer sqlserver1.mydomain.net `
+			  -targetDB Alt_AdvWorks2022 `
+			  -mdfFolder E:\MSSQL\DATA -ldfFolder E:\MSSQL\Log
+			  -commit
 ```
 
 ## Authenticating to DMaaS

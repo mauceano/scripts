@@ -8,7 +8,7 @@ This script restores one or more (or all) databases from the specified SQL serve
 
 ## Tip of the hat
 
-This script is a DMaaS modified version of Brian Seltzer's "restoreSQLv2.ps1" (Self-Managed clusters version)
+This script is a DMaaS modified version of Brian Seltzer's "restoreSQLv2.ps1" (Self-Managed clusters version), and could not have been done without him.
 
 ## Warning
 

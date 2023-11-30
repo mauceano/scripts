@@ -8,7 +8,7 @@ This script restores one or more (or all) databases from the specified SQL serve
 
 ## Tip of the hat
 
-This script, readme, and layout are based on Brian Seltzer's "restoreSQLv2.ps1", credits are due to the King.
+`This script, readme, and layout are based on Brian Seltzer's "restoreSQLv2.ps1", credits are due to the King.`
 
 ## Warning
 

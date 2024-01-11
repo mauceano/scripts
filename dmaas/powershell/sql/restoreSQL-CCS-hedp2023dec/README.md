@@ -4,6 +4,10 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This script restores one or more (or all) databases from the specified SQL server (not including the system databases).  
 
+## Credits
+
+Both script and readme are entirely based on the work from [Brian Seltzer](https://github.com/bseltz-cohesity/)
+
 ## Warning
 
 This script can overwrite production data if you ask it to. Make sure you know what you are doing and test thoroughly before using in production!!!

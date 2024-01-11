@@ -178,9 +178,8 @@ if($sourceDbNames.Count -gt 1 -and $targetDB){
 
 # find provided DB on server
 if($sourceDbNames){
-    $from = 0
-    $dbresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer&size=$pageSize&from=$from"
-    $dbresults.vms = $dbresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer}
+    $dbresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer"
+	$dbresults.vms = $dbresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer}
 	$dbresults.vms = $dbresults.vms | Where-Object {$_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $sourceDbNames}
     if(! $dbresults.vms){
         Write-Host "no DBs found for $sourceServer" -ForegroundColor Yellow
@@ -217,7 +216,7 @@ if($dbType  -eq "5") {
 	$sourceDbNames = @($dbresults.vms.vmDocument.objectId.entity.sqlEntity.aagDbCopyInfoVec.databaseName | Sort-Object -Unique)
 }
 if($dbType -ne "1" -and $dbType -ne "5"){
-	Write-Host "Could not determine the Database type, exiting" -ForegroundColor Yellow
+	Write-Host "Could not determine the Database type, exiting script" -ForegroundColor Yellow
 	exit
 }
 

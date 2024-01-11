@@ -6,7 +6,7 @@ This script restores one or more (or all) databases from the specified SQL serve
 
 ## Credits
 
-This readme is based entirely on [Brian Seltzer's](https://github.com/bseltz-cohesity/), and the script is a modified version of his creation, [restoreSQL-CCS.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/dmaas/powershell/restoreSQL-CCS/restoreSQL-CCS.ps1).
+This readme is based entirely on [Brian Seltzer's](https://github.com/bseltz-cohesity/), and the script is a modified version of his original script [restoreSQL-CCS.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/dmaas/powershell/restoreSQL-CCS/restoreSQL-CCS.ps1)
 
 ## Warning
 

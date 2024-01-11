@@ -17,14 +17,14 @@ Run these commands from PowerShell to download the script(s) into your current d
 $scriptName = 'restoreSQL-CCS-hedp2023Dec'
 $repoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master'
 $repoURLmau = 'https://raw.githubusercontent.com/mauceano/scripts/master'
-(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrlmau/dmaas/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrlmau/dmaas/powershell/sql/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
 
 ## Components
 
-* [restoreSQL-CCS-hedp2023Dec.ps1](https://raw.githubusercontent.com/mauceano/scripts/master/dmaas/powershell/restoreSQL-CCS-hedp2023Dec/restoreSQL-CCS-hedp2023Dec.ps1): the main powershell script
+* [restoreSQL-CCS-hedp2023Dec.ps1](https://raw.githubusercontent.com/mauceano/scripts/master/dmaas/powershell/sql/restoreSQL-CCS-hedp2023Dec/restoreSQL-CCS-hedp2023Dec.ps1): the main powershell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:

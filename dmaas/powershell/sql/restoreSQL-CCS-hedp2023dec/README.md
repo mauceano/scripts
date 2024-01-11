@@ -24,7 +24,7 @@ $repoURLmau = 'https://raw.githubusercontent.com/mauceano/scripts/master'
 
 ## Components
 
-* [restoreSQL-CCS-hedp2023Dec.ps1](https://raw.githubusercontent.com/mauceano/scripts/master/dmaas/powershell/sql/restoreSQL-CCS-hedp2023Dec/restoreSQL-CCS-hedp2023Dec.ps1): the main powershell script
+* [restoreSQL-CCS-hedp2023Dec.ps1](https://raw.githubusercontent.com/mauceano/scripts/master/dmaas/powershell/sql/restoreSQL-CCS-hedp2023dec/restoreSQL-CCS-hedp2023Dec.ps1): the main powershell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
